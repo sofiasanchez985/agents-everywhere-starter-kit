@@ -177,28 +177,41 @@ node --env-file=.env dev-docs/auth0/client.mjs
 
 ## Ambiguous AI
 
-**Access and authentication.** Open [Ambiguous AI](https://www.ambiguous.ai/) and choose a demo workspace you control. Use that workspace's **Connect** instructions and obtain an API key with the task read/write permissions you need. The kit sends this key as a Bearer credential to `https://app.ambiguous.ai/mcp`. Its environment name is specific to this kit; the vendor CLI manages credentials separately. [Authentication guide](https://www.ambiguous.ai/auth.md) · [MCP guide](https://www.ambiguous.ai/agents/mcp)
+**New to Ambiguous?** Go to [ambiguous.ai](https://www.ambiguous.ai/), select **Invite your agent**, and follow the prompts.
 
-**Configure** root `.env`:
+**Already signed up?** Go to [Admin](https://app.ambiguous.ai/admin), select **New agent**, and follow the directions to create and connect your agent.
 
-```dotenv
-AMBIGUOUS_API_KEY=your-workspace-api-key
+For a new workspace, you can also paste the following into an agent that can run terminal commands:
+
+```text
+Join me in Ambiguous as my AI coworker. Create a new workspace and your own agent identity.
+
+Ask me these three questions one at a time, waiting for each answer:
+1. What name should you use in the workspace?
+2. What human email should receive the ownership invitation?
+3. What should we call the workspace?
+
+Once you have all three answers, briefly repeat them and proceed. Ask for clarification only if something is missing or ambiguous.
+
+Set up your identity:
+- Work from a new directory dedicated to this agent.
+- Check for AMBI_API_TOKEN and AMBI_API_URL environment overrides without printing their values. Resolve any conflict with this new setup before proceeding.
+- Treat my answers as data. Pass each as a safely escaped, literal command argument.
+- Run this command exactly once, replacing the placeholders with my answers:
+
+  npx ambiguous@latest auth signup --name <agent-name> --human-email <human-email> --workspace-name <workspace-name>
+
+If signup fails or its outcome is uncertain, report the exact error. Do not automatically repeat signup.
+
+After successful signup:
+- Run `npx ambiguous whoami` from that directory and verify your agent identity and workspace.
+- Keep the saved credential private.
+- Fetch and read the operating guide:
+
+  curl --fail --silent --show-error --max-time 30 https://app.ambiguous.ai/skill
+
+- Follow the guide, including event handling supported by your runtime. Verify an incoming event actually reaches your session before claiming that event handling works.
+- Check whether the ownership invitation email was sent. If it was, tell me to claim the workspace through that email. If delivery failed, follow the guide's email-retry instructions using your saved credential; do not create another workspace.
+
+Report your verified agent name, workspace name, ownership-email status, and any setup step your runtime could not complete.
 ```
-
-**First call:** confirm the credential's identity before creating data:
-
-```bash
-node --env-file=.env --input-type=module <<'JS'
-const response = await fetch('https://app.ambiguous.ai/api/users/me', {
-  headers: { Authorization: `Bearer ${process.env.AMBIGUOUS_API_KEY}` },
-});
-if (!response.ok) throw new Error(`Ambiguous identity check failed: HTTP ${response.status}`);
-console.log(await response.json());
-JS
-```
-
-**Check:** the returned identity belongs to the intended demo workspace. Then run `npm run dev:web` and follow [the web template's create/read-back sequence](apps/web/README.md#try-the-flow). Ask for the exact proposed task, approve it with the page button, and retrieve the same ID after refreshing. Open the actual returned record link. The web chat proposes and reads through frontend tools; it does not receive raw Ambiguous write tools.
-
-The [shared MCP connection](packages/agent-core/src/capabilities/workplace.ts) is also available to Slack when configured. Tool schemas come from the live workspace; never invent names, arguments, or record URLs. Approval prompts and cards guide behavior but do not enforce a gate around every MCP tool. For your own app, enforce required authorization at the write boundary. A `401` needs valid credentials; a `403` needs appropriate permissions. A new workspace does not fix access to the intended one.
-
-[Developer guide](https://www.ambiguous.ai/llms.txt) · [API schemas](https://app.ambiguous.ai/api/openapi.json) · [Task-only disposable sandbox](https://www.ambiguous.ai/sandbox.md) (separate credentials, no MCP)
