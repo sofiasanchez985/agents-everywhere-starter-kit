@@ -215,3 +215,11 @@ After successful signup:
 
 Report your verified agent name, workspace name, ownership-email status, and any setup step your runtime could not complete.
 ```
+
+**Configure** root `.env` for the web template:
+
+```dotenv
+AMBIGUOUS_API_KEY=your-workspace-api-key
+```
+
+Create this key from your workspace's **Connect** instructions with the task read/write permissions you need. The kit sends it as a Bearer credential to `https://app.ambiguous.ai/mcp`. Its environment name is specific to this kit; the vendor CLI above manages its own credentials separately. A `401` needs valid credentials; a `403` needs appropriate permissions.
